@@ -32,19 +32,40 @@ module pipelinedcpu(clock,resetn,pc,inst,ealu,malu,walu
 	 wire mwreg,mm2reg,mwmem;
 	 wire wwreg,wm2reg;
 	 wire z;
-	 pipepc prog_cnt (npc,clock,resetn,pc);//程序计数器PC
+	 wire dj,dbeq,dbne;
+	 wire ej,ebeq,ebne;
+	 wire [1:0] dadepen,dbdepen,dsdepen;//添加数据冒险的控制信号
+	 wire [1:0] eadepen,ebdepen;//添加数据冒险的控制信号
+	 wire [1:0] esdepen;//传递store的控制信号到exe级
+	 wire ldepen;//添加load冒险的关闭写使能信号
+	 
+	 wire ex_is_uncond, ex_is_cond; //kongzhimaoxian
+	 
+	 
+	 pipepc prog_cnt (npc,clock,resetn,pc,ldepen);//程序计数器PC
 	 pipeif if_stage (pcsource,pc,bpc,da,jpc,npc,pc4,ins);//取指IF级
-	 pipeir inst_reg (pc4,ins,clock,resetn,dpc4,inst);//IF级与ID级之间的寄存器，即指令寄存器IR
+	 pipeir inst_reg (pc4,ins,clock,resetn,dpc4,inst,ldepen);//IF级与ID级之间的寄存器，即指令寄存器IR
 	 pipeid id_stage (dpc4,inst,                        //指令译码ID级
 	                  wrn,wdi,wwreg,clock,resetn,
 							bpc,jpc,pcsource,dwreg,dm2reg,dwmem,
-							daluc,daluimm,da,db,dimm,drn,dshift,djal,z);
+							daluc,daluimm,da,db,dimm,drn,dshift,djal,z,
+							em2reg,ern,ldepen,
+							ewreg,mwreg,mrn, //数据冒险 参数
+				         dadepen,dbdepen, //数据冒险 参数
+							dj,dbeq,dbne,
+							ex_is_uncond, ex_is_cond); 
 	 pipedereg de_reg (dwreg,dm2reg,dwmem,daluc,daluimm,da,db,dimm,//ID级与EXE级之间的寄存器
 	                   drn,dshift,djal,dpc4,clock,resetn,
-							 ewreg,em2reg,ewmem,ealuc,ealuimm,ea,eb,eimm,
-							 ern0,eshift,ejal,epc4);
+							 ewreg,em2reg,ewmem,ealuc,ea,eb,eimm,
+							 ern0,ejal,epc4,
+							 dadepen,dbdepen,eadepen,ebdepen,
+							 dj,dbeq,dbne,ej,ebeq,ebne);
 	 pipeexe exe_stage (ealuc,ealuimm,ea,eb,eimm,eshift,ern0,epc4,//指令执行EXE级
-	                    ejal,ern,ealu,z);
+	                    ejal,ern,ealu,z,
+							  eadepen,ebdepen, //shujumaoxian
+								malu,wdi,
+								ej,ebeq,ebne,
+								ex_is_uncond, ex_is_cond);
 	 pipeemreg em_reg (ewreg,em2reg,ewmem,ealu,eb,ern,clock,resetn,//EXE级与MEM级之间的寄存器
 	                   mwreg,mm2reg,mwmem,malu,mb,mrn);
 	 IP_RAM mem_stage(mwmem,malu,mb,clock,mmo);//存储器访问MEM级

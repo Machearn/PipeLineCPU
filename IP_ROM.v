@@ -23,20 +23,20 @@ module IP_ROM(a,inst
 	 input [31:0] a;
 	 output [31:0] inst;
 	 wire [31:0] rom [0:63];
-	 
-	 assign rom[6'h00]=32'h00100443;//add r1,r2,r3
-	 assign rom[6'h01]=32'h00201025;//sub r4,r1,r5
-	 assign rom[6'h02]=32'h041018E1;//and r6,r7,r1
-	 assign rom[6'h03]=32'h04202021;//or r8,r1,r1
-	 assign rom[6'h04]=32'h00000000;//
-	 assign rom[6'h05]=32'h00000000;//
 //	 assign rom[6'h00]=32'h44000001;//lui r1,0
 //	 assign rom[6'h01]=32'h28014024;//ori r4,r1,80
 //	 assign rom[6'h02]=32'h00202124;//sub r8,r9,r4
 //	 assign rom[6'h03]=32'h14001005;//addi r5,r0,4
 //	 assign rom[6'h04]=32'h38000082;//store r2,0x0(r4)
 //	 assign rom[6'h05]=32'h34000089;//load r9,0x0(r4)
-	 assign rom[6'h06]=32'h00000000;
+	 
+	 assign rom[6'h00]=32'h00100443;//add r1,r2,r3
+	 assign rom[6'h01]=32'h00201025;//sub r4,r1,r5
+	 assign rom[6'h02]=32'h041018E1;//and r6,r7,r1
+	 assign rom[6'h03]=32'h04202021;//or r8,r1,r1
+	 assign rom[6'h04]=32'h380041A2;//sw r2,r13,16
+	 assign rom[6'h05]=32'h34019DAA;//lw r10,r13,103
+	 assign rom[6'h06]=32'h00102C6A;//add r11,r3,r10
 	 assign rom[6'h07]=32'h00000000;
 	 assign rom[6'h08]=32'h00000000;
 	 assign rom[6'h09]=32'h00000000;

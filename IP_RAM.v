@@ -38,5 +38,6 @@ module IP_RAM(we,addr,datain,clk,dataout
 		 ram[5'h15]=32'h00000027;
 		 ram[5'h16]=32'h00000079;
 		 ram[5'h17]=32'h00000115;
+		 ram[5'h1D]=32'hFF88FF88;
 		 end
 endmodule

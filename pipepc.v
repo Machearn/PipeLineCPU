@@ -18,10 +18,13 @@
 // Additional Comments: 
 //
 //////////////////////////////////////////////////////////////////////////////////
-module pipepc(npc,clk,clrn,pc
+module pipepc(npc,clk,clrn,pc,we
     );
 	 input [31:0] npc;
-	 input clk,clrn;
+	 input clk,clrn,we;
 	 output [31:0] pc;
-	 dff32 program_counter(npc,clk,clrn,pc);   //利用32位的D触发器实现PC
+	 
+	 wire [31:0] y;
+	 mux2x32 write_pc_enable(pc,npc,we,y);
+	 dff32 program_counter(y,clk,clrn,pc);   //利用32位的D触发器实现PC
 endmodule
