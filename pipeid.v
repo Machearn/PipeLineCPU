@@ -20,13 +20,14 @@
 //////////////////////////////////////////////////////////////////////////////////
 module pipeid(dpc4,inst,wrn,
               wdi,wwreg,clk,clrn,bpc,jpc,pcsource,
-				  wreg,m2reg,wmem,aluc,aluimm,a,b,imm,rn,
-				  shift,jal,rsrtequ,
+				  wreg,m2reg,wmem,aluc,a,b,imm,rn,
+				  jal,rsrtequ,
 				  em2reg,ern,load_depen, //load 冒险 参数
 				  ewreg,mwreg,mrn, //数据冒险 参数
 				  a_depen,b_depen, //数据冒险 参数
 				  j,beq,bne,
-				  ex_is_uncond, ex_is_cond
+				  ex_is_uncond, ex_is_cond,
+				  store_depen
     );
 	 input [31:0] dpc4,inst,wdi;
 	 input [4:0] wrn;
@@ -43,10 +44,11 @@ module pipeid(dpc4,inst,wrn,
 	 output [4:0] rn;
 	 output [4:0] aluc;
 	 output [1:0] pcsource;
-	 output wreg,m2reg,wmem,aluimm,shift,jal;
+	 output wreg,m2reg,wmem,jal;
 	 output load_depen; //load 冒险输出
 	 output [1:0] a_depen,b_depen; //数据冒险输出
 	 output j,beq,bne;
+	 output [1:0] store_depen;
 	 
 	 
 	 wire [5:0] op,func;
@@ -63,11 +65,13 @@ module pipeid(dpc4,inst,wrn,
 	 assign jpc={dpc4[31:28],inst[25:0],2'b00};//jump,jal指令的目标地址的计算
 	 
 	 pipeidcu cu(rsrtequ,func,                          //控制部件
-	             op,wreg,m2reg,wmem,aluc,regrt,aluimm,
-					 sext,pcsource,shift,jal,
+	             op,wreg,m2reg,wmem,aluc,regrt,
+					 sext,pcsource,jal,
 					 em2reg,ern,load_depen,rs,rt,
 					 mrn,ewreg,mwreg,a_depen,b_depen,
-					 j,beq,bne);
+					 j,beq,bne,
+					 ex_is_uncond, ex_is_cond,
+					 store_depen);
     regfile rf (rs,rt,wdi,wrn,wwreg,~clk,clrn,qa,qb);//寄存器堆，有32个32位的寄存器，0号寄存器恒为0
 	 mux2x5 des_reg_no (rd,rt,regrt,rn); //选择目的寄存器是来自于rd,还是rt
 	 assign a=qa;

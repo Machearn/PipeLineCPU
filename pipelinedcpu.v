@@ -24,6 +24,7 @@ module pipelinedcpu(clock,resetn,pc,inst,ealu,malu,walu
 	 output [31:0] pc,inst,ealu,malu,walu;
 	 wire [31:0] bpc,jpc,npc,pc4,ins,dpc4,inst,da,db,dimm,ea,eb,eimm;
 	 wire [31:0] epc4,mb,mmo,wmo,wdi;
+	 wire [31:0] ebs;
 	 wire [4:0] drn,ern0,ern,mrn,wrn;
 	 wire [4:0] daluc,ealuc;
 	 wire [1:0] pcsource;
@@ -48,25 +49,28 @@ module pipelinedcpu(clock,resetn,pc,inst,ealu,malu,walu
 	 pipeid id_stage (dpc4,inst,                        //指令译码ID级
 	                  wrn,wdi,wwreg,clock,resetn,
 							bpc,jpc,pcsource,dwreg,dm2reg,dwmem,
-							daluc,daluimm,da,db,dimm,drn,dshift,djal,z,
+							daluc,da,db,dimm,drn,djal,z,
 							em2reg,ern,ldepen,
 							ewreg,mwreg,mrn, //数据冒险 参数
 				         dadepen,dbdepen, //数据冒险 参数
 							dj,dbeq,dbne,
-							ex_is_uncond, ex_is_cond); 
-	 pipedereg de_reg (dwreg,dm2reg,dwmem,daluc,daluimm,da,db,dimm,//ID级与EXE级之间的寄存器
-	                   drn,dshift,djal,dpc4,clock,resetn,
+							ex_is_uncond, ex_is_cond,
+							dsdepen); 
+	 pipedereg de_reg (dwreg,dm2reg,dwmem,daluc,da,db,dimm,//ID级与EXE级之间的寄存器
+	                   drn,djal,dpc4,clock,resetn,
 							 ewreg,em2reg,ewmem,ealuc,ea,eb,eimm,
 							 ern0,ejal,epc4,
 							 dadepen,dbdepen,eadepen,ebdepen,
-							 dj,dbeq,dbne,ej,ebeq,ebne);
-	 pipeexe exe_stage (ealuc,ealuimm,ea,eb,eimm,eshift,ern0,epc4,//指令执行EXE级
+							 dj,dbeq,dbne,ej,ebeq,ebne,
+							 dsdepen,esdepen);
+	 pipeexe exe_stage (ealuc,ea,eb,eimm,ern0,epc4,//指令执行EXE级
 	                    ejal,ern,ealu,z,
 							  eadepen,ebdepen, //shujumaoxian
 								malu,wdi,
 								ej,ebeq,ebne,
+								esdepen,ebs,
 								ex_is_uncond, ex_is_cond);
-	 pipeemreg em_reg (ewreg,em2reg,ewmem,ealu,eb,ern,clock,resetn,//EXE级与MEM级之间的寄存器
+	 pipeemreg em_reg (ewreg,em2reg,ewmem,ealu,ebs,ern,clock,resetn,//EXE级与MEM级之间的寄存器
 	                   mwreg,mm2reg,mwmem,malu,mb,mrn);
 	 IP_RAM mem_stage(mwmem,malu,mb,clock,mmo);//存储器访问MEM级
 	 pipemwreg mw_reg (mwreg,mm2reg,mmo,malu,mrn,clock,resetn,//MEM级与WB级之间的寄存器

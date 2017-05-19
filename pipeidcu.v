@@ -19,12 +19,13 @@
 //
 //////////////////////////////////////////////////////////////////////////////////
 module pipeidcu(rsrtequ,func,
-	             op,wreg,m2reg,wmem,aluc,regrt,aluimm,
-					 sext,pcsource,shift,jal,
+	             op,wreg,m2reg,wmem,aluc,regrt,
+					 sext,pcsource,jal,
 					 em2reg,ern,load_depen,rs,rt, //load 冒险 参数
 					 mrn,ewreg,mwreg,a_depen,b_depen, //数据冒险参数
 					 j,beq,bne, //控制冒险 参数
-					 ex_is_uncond, ex_is_cond
+					 ex_is_uncond, ex_is_cond, //控制冒险参数
+					 store_depen //store 冒险
     );
 	 input rsrtequ; 
 	 input [5:0] func,op;
@@ -35,13 +36,15 @@ module pipeidcu(rsrtequ,func,
 	 input ex_is_uncond, ex_is_cond;
 	 
 	 
-	 output wreg,m2reg,wmem,regrt,aluimm,sext,shift,jal;
+	 output wreg,m2reg,wmem,regrt,sext,jal;
 	 output [4:0] aluc;
 	 output [1:0] pcsource;
 	 output load_depen; //load 冒险
 	 output [1:0] a_depen,b_depen;
 	 output j,beq,bne;
+	 output [1:0] store_depen;
 	 
+	 wire aluimm,shift;
 	 wire i_add,i_sub,i_mul,i_and,i_or,i_xor,i_sll,i_srl,i_sra,i_jr;            //对指令进行译码
 	 wire i_addi,i_muli,i_andi,i_ori,i_xori,i_lw,i_sw,i_beq,i_bne,i_lui,i_j,i_jal;
 	 
@@ -87,7 +90,7 @@ module pipeidcu(rsrtequ,func,
     ////////////////////////////////////////////控制信号的生成/////////////////////////////////////////////////////////
     assign wreg=(i_add|i_sub|i_mul|i_and|i_or|i_xor|i_sll|           //wreg为1时写寄存器堆中某一寄存器，否则不写
 	              i_srl|i_sra|i_addi|i_muli|i_andi|i_ori|i_xori|
-					  i_lw|i_lui|i_jal)&(ex_is_uncond|ex_is_cond);
+					  i_lw|i_lui|i_jal)&(~ex_is_uncond);
 	 assign regrt=i_addi|i_muli|i_andi|i_ori|i_xori|i_lw|i_lui;    //regrt为1时目的寄存器是rt，否则为rd
 	 assign jal=i_jal;                                           //为1时执行jal指令，否则不是
 	 assign m2reg=i_lw;  //为1时将存储器数据写入寄存器，否则将ALU结果写入寄存器
@@ -100,7 +103,7 @@ module pipeidcu(rsrtequ,func,
 	 assign aluc[1]=i_and|i_andi|i_or|i_ori|i_xor|i_xori|i_beq|i_bne;//ALU的控制码
 	 assign aluc[0]=i_mul|i_muli|i_xor|i_xori|i_sll|i_srl|i_sra|i_beq|i_bne;//ALU的控制码
 
-	 assign wmem=i_sw&(ex_is_uncond|ex_is_cond);//为1时写存储器，否则不写
+	 assign wmem=i_sw&(~ex_is_uncond);//为1时写存储器，否则不写
 	 assign pcsource[1]=i_jr|i_j|i_jal;//选择下一条指令的地址，00选PC+4,01选转移地址，10选寄存器内地址，11选跳转地址
 	 assign pcsource[0]=i_beq&rsrtequ|i_bne&~rsrtequ|i_j|i_jal;
 	 
@@ -148,4 +151,14 @@ module pipeidcu(rsrtequ,func,
 	assign j = i_j;
 	assign beq = i_beq;
 	assign bne = i_bne;
+	
+	//store 的冒险的解决
+	//and(store_depen,wmem,((rt_exe_equ & ewreg)|(rt_mem_equ & mwreg)));
+	assign store_depen[0] = (wmem && ~rt_exe_equ && ~ewreg && rt_mem_equ && mwreg)|
+	                        (wmem && ~rt_exe_equ && ewreg && rt_mem_equ && mwreg)|
+									(wmem && rt_exe_equ && ~ewreg && rt_mem_equ && mwreg);
+   assign store_depen[1] = (wmem && ~rt_exe_equ && ~ewreg && rt_mem_equ && mwreg)|
+	                        (wmem && ~rt_exe_equ && ewreg && rt_mem_equ && mwreg)|
+									(wmem && rt_exe_equ && ~ewreg && rt_mem_equ && mwreg)|
+									(wmem && rt_exe_equ && ewreg);
 endmodule

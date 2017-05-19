@@ -4,7 +4,7 @@
 // Company: 
 // Engineer:
 //
-// Create Date:   17:19:46 05/18/2017
+// Create Date:   16:03:22 05/19/2017
 // Design Name:   pipeidcu
 // Module Name:   D:/PipeLineCPU/pipeidcu_tb.v
 // Project Name:  pipeline
@@ -35,6 +35,8 @@ module pipeidcu_tb;
 	reg [4:0] mrn;
 	reg ewreg;
 	reg mwreg;
+	reg ex_is_uncond;
+	reg ex_is_cond;
 
 	// Outputs
 	wire wreg;
@@ -42,14 +44,16 @@ module pipeidcu_tb;
 	wire wmem;
 	wire [4:0] aluc;
 	wire regrt;
-	wire aluimm;
 	wire sext;
 	wire [1:0] pcsource;
-	wire shift;
 	wire jal;
 	wire load_depen;
 	wire [1:0] a_depen;
 	wire [1:0] b_depen;
+	wire j;
+	wire beq;
+	wire bne;
+	wire [1:0] store_depen;
 
 	// Instantiate the Unit Under Test (UUT)
 	pipeidcu uut (
@@ -61,10 +65,8 @@ module pipeidcu_tb;
 		.wmem(wmem), 
 		.aluc(aluc), 
 		.regrt(regrt), 
-		.aluimm(aluimm), 
 		.sext(sext), 
 		.pcsource(pcsource), 
-		.shift(shift), 
 		.jal(jal), 
 		.em2reg(em2reg), 
 		.ern(ern), 
@@ -75,7 +77,13 @@ module pipeidcu_tb;
 		.ewreg(ewreg), 
 		.mwreg(mwreg), 
 		.a_depen(a_depen), 
-		.b_depen(b_depen)
+		.b_depen(b_depen), 
+		.j(j), 
+		.beq(beq), 
+		.bne(bne), 
+		.ex_is_uncond(ex_is_uncond), 
+		.ex_is_cond(ex_is_cond), 
+		.store_depen(store_depen)
 	);
 
 	initial begin
@@ -90,12 +98,13 @@ module pipeidcu_tb;
 		mrn = 0;
 		ewreg = 0;
 		mwreg = 0;
+		ex_is_uncond = 0;
+		ex_is_cond = 0;
 
 		// Wait 100 ns for global reset to finish
 		#100;
-        
-		// Add stimulus here
-		rsrtequ = 0;
+		//load
+      /*rsrtequ = 0;
 		func = 6'b000010;
 		op = 6'b000000;
 		em2reg = 0;
@@ -104,7 +113,36 @@ module pipeidcu_tb;
 		rt = 5'b00101;
 		mrn = 0;
 		ewreg = 1;
+		mwreg = 0;*/  
+		// Add stimulus here
+		//store 冒险选择MEM级
+		rsrtequ = 0;
+		func = 6'b000000;
+		op = 6'b001110;
+		em2reg = 0;
+		ern = 5'b00011;
+		rs = 5'b00010;
+		rt = 5'b00011;
+		mrn = 0;
+		ewreg = 1;
 		mwreg = 0;
+		ex_is_uncond = 0;
+		ex_is_cond = 0;
+		
+		#100;
+		//store 冒险选择WB级
+		rsrtequ = 0;
+		func = 6'b000000;
+		op = 6'b001110;
+		em2reg = 0;
+		ern = 5'b00111;
+		rs = 5'b00010;
+		rt = 5'b00011;
+		mrn = 5'b00011;
+		ewreg = 1;
+		mwreg = 1;
+		ex_is_uncond = 0;
+		ex_is_cond = 0;
 	end
       
 endmodule
