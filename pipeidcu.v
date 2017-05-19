@@ -105,7 +105,8 @@ module pipeidcu(rsrtequ,func,
 
 	 assign wmem=i_sw&(~ex_is_uncond);//为1时写存储器，否则不写
 	 assign pcsource[1]=i_jr|i_j|i_jal;//选择下一条指令的地址，00选PC+4,01选转移地址，10选寄存器内地址，11选跳转地址
-	 assign pcsource[0]=i_beq&rsrtequ|i_bne&~rsrtequ|i_j|i_jal;
+	 //assign pcsource[0]=i_beq&rsrtequ|i_bne&~rsrtequ|i_j|i_jal; //原来的初始代码有错误
+	 assign pcsource[0]=i_beq&rsrtequ|i_bne&~rsrtequ|i_j|i_jal; 
 	 
 	 assign rs_isreg=i_add|i_sub|i_mul|i_and|i_or|i_xor|i_jr|i_addi|i_muli|i_andi|i_ori|i_xori|i_lw|i_sw|i_beq|i_bne;
 	 assign rt_isreg=i_add|i_sub|i_mul|i_and|i_or|i_xor|i_sll|i_srl|i_sra|i_addi|i_muli|i_andi|i_ori|i_xori|i_lw|i_sw|i_beq|i_bne|i_lui;
@@ -118,12 +119,13 @@ module pipeidcu(rsrtequ,func,
 	 and(exe_b_depen,rt_equ,em2reg,rt_isreg);
 	 nor(load_depen,exe_a_depen,exe_b_depen);
 	 
+	 //判断当前的寄存器和EX级和MEM的关系
 	 wire rs_exe_equ,rt_exe_equ,rs_mem_equ,rt_mem_equ;
 	 assign rs_exe_equ = (rs == ern)?1'b1:1'b0;
 	 assign rt_exe_equ = (rt == ern)?1'b1:1'b0;
 	 assign rs_mem_equ = (rs == mrn)?1'b1:1'b0;
 	 assign rt_mem_equ = (rt == mrn)?1'b1:1'b0;
-
+    //生成解决A端数据冒险的控制信号
     assign a_depen[0] = shift|(~shift && ~ewreg && ~rs_exe_equ && mwreg && rs_mem_equ)|
 	                     (~shift && ~ewreg && rs_exe_equ && mwreg && rs_mem_equ)|
 								(~shift && ewreg && ~rs_exe_equ && mwreg && rs_mem_equ);
@@ -135,7 +137,7 @@ module pipeidcu(rsrtequ,func,
 								(~shift && ewreg && rs_exe_equ && mwreg && rs_mem_equ)|
 								(~shift && ewreg && rs_exe_equ && ~mwreg && ~rs_mem_equ)|
 								(~shift && ewreg && rs_exe_equ && ~mwreg && rs_mem_equ);
-								
+    //生成解决B端数据冒险的控制信号					
     assign b_depen[0] = aluimm|(~aluimm && ~ewreg && ~rt_exe_equ && mwreg && rt_mem_equ)|
 	                     (~aluimm && ~ewreg && rt_exe_equ && mwreg && rt_mem_equ)|
 								(~aluimm && ewreg && ~rt_exe_equ && mwreg && rt_mem_equ);
@@ -152,8 +154,7 @@ module pipeidcu(rsrtequ,func,
 	assign beq = i_beq;
 	assign bne = i_bne;
 	
-	//store 的冒险的解决
-	//and(store_depen,wmem,((rt_exe_equ & ewreg)|(rt_mem_equ & mwreg)));
+	//store 的冒险的解决 以及控制信号的生成
 	assign store_depen[0] = (wmem && ~rt_exe_equ && ~ewreg && rt_mem_equ && mwreg)|
 	                        (wmem && ~rt_exe_equ && ewreg && rt_mem_equ && mwreg)|
 									(wmem && rt_exe_equ && ~ewreg && rt_mem_equ && mwreg);
