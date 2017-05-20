@@ -21,11 +21,12 @@
 module pipeidcu(rsrtequ,func,
 	             op,wreg,m2reg,wmem,aluc,regrt,
 					 sext,pcsource,jal,
-					 em2reg,ern,load_depen,rs,rt, //load 冒险 参数
+					 em2reg,ern,we_pc_ir,rs,rt, //load 冒险 参数
 					 mrn,ewreg,mwreg,a_depen,b_depen, //数据冒险参数
 					 j,beq,bne, //控制冒险 参数
-					 ex_is_uncond, ex_is_cond, //控制冒险参数
-					 store_depen //store 冒险
+					 ex_is_uncond, ex_is_cond, mem_is_cond, //控制冒险参数
+					 store_depen, //store 冒险
+					 reset_ir
     );
 	 input rsrtequ; 
 	 input [5:0] func,op;
@@ -33,16 +34,17 @@ module pipeidcu(rsrtequ,func,
 	 input [4:0] ern,rs,rt; //load 冒险
 	 input [4:0] mrn;
 	 input ewreg,mwreg;
-	 input ex_is_uncond, ex_is_cond;
+	 input ex_is_uncond, ex_is_cond, mem_is_cond;
 	 
 	 
 	 output wreg,m2reg,wmem,regrt,sext,jal;
 	 output [4:0] aluc;
 	 output [1:0] pcsource;
-	 output load_depen; //load 冒险
+	 output we_pc_ir; //写使能
 	 output [1:0] a_depen,b_depen;
 	 output j,beq,bne;
 	 output [1:0] store_depen;
+	 output reset_ir; //清理IR,解决beq bne的问题
 	 
 	 wire aluimm,shift;
 	 wire i_add,i_sub,i_mul,i_and,i_or,i_xor,i_sll,i_srl,i_sra,i_jr;            //对指令进行译码
@@ -90,7 +92,7 @@ module pipeidcu(rsrtequ,func,
     ////////////////////////////////////////////控制信号的生成/////////////////////////////////////////////////////////
     assign wreg=(i_add|i_sub|i_mul|i_and|i_or|i_xor|i_sll|           //wreg为1时写寄存器堆中某一寄存器，否则不写
 	              i_srl|i_sra|i_addi|i_muli|i_andi|i_ori|i_xori|
-					  i_lw|i_lui|i_jal)&(~ex_is_uncond);
+					  i_lw|i_lui|i_jal)&(~ex_is_uncond)&(~mem_is_cond);
 	 assign regrt=i_addi|i_muli|i_andi|i_ori|i_xori|i_lw|i_lui;    //regrt为1时目的寄存器是rt，否则为rd
 	 assign jal=i_jal;                                           //为1时执行jal指令，否则不是
 	 assign m2reg=i_lw;  //为1时将存储器数据写入寄存器，否则将ALU结果写入寄存器
@@ -103,21 +105,25 @@ module pipeidcu(rsrtequ,func,
 	 assign aluc[1]=i_and|i_andi|i_or|i_ori|i_xor|i_xori|i_beq|i_bne;//ALU的控制码
 	 assign aluc[0]=i_mul|i_muli|i_xor|i_xori|i_sll|i_srl|i_sra|i_beq|i_bne;//ALU的控制码
 
-	 assign wmem=i_sw&(~ex_is_uncond);//为1时写存储器，否则不写
+	 assign wmem=i_sw&(~ex_is_uncond)&(~mem_is_cond);//为1时写存储器，否则不写
 	 assign pcsource[1]=i_jr|i_j|i_jal;//选择下一条指令的地址，00选PC+4,01选转移地址，10选寄存器内地址，11选跳转地址
 	 //assign pcsource[0]=i_beq&rsrtequ|i_bne&~rsrtequ|i_j|i_jal; //原来的初始代码有错误
-	 assign pcsource[0]=i_beq&rsrtequ|i_bne&~rsrtequ|i_j|i_jal; 
+	 assign pcsource[0]=ex_is_cond|i_j|i_jal; 
 	 
 	 assign rs_isreg=i_add|i_sub|i_mul|i_and|i_or|i_xor|i_jr|i_addi|i_muli|i_andi|i_ori|i_xori|i_lw|i_sw|i_beq|i_bne;
 	 assign rt_isreg=i_add|i_sub|i_mul|i_and|i_or|i_xor|i_sll|i_srl|i_sra|i_addi|i_muli|i_andi|i_ori|i_xori|i_lw|i_sw|i_beq|i_bne|i_lui;
-	 
+	 //解决load冒险
 	 wire rs_equ,rt_equ;
 	 assign rs_equ = (rs == ern)?1'b1:1'b0;
 	 assign rt_equ = (rt == ern)?1'b1:1'b0;
 	 wire exe_a_depen,exe_b_depen;
 	 and(exe_a_depen,rs_equ,em2reg,rs_isreg);
 	 and(exe_b_depen,rt_equ,em2reg,rt_isreg);
-	 nor(load_depen,exe_a_depen,exe_b_depen);
+	 wire load_depen;
+	 or(load_depen,exe_a_depen,exe_b_depen);
+	 //load会关闭写使能信号,当前如果是条件跳转的话也会
+	 assign we_pc_ir = ~(load_depen|i_beq|i_bne);
+	 assign reset_ir = (i_beq|i_bne);
 	 
 	 //判断当前的寄存器和EX级和MEM的关系
 	 wire rs_exe_equ,rt_exe_equ,rs_mem_equ,rt_mem_equ;

@@ -23,22 +23,23 @@ module pipedereg(dwreg,dm2reg,dwmem,daluc,da,db,dimm,drn,
 					  ealuc,ea,eb,eimm,ern,ejal,epc4,
 					  dadepen,dbdepen,eadepen,ebdepen,
 					  dj,dbeq,dbne,ej,ebeq,ebne,
-					  dsdepen,esdepen
+					  dsdepen,esdepen,
+					  dbpc,bpc
     );
-	 input [31:0] da,db,dimm,dpc4;
+	 input [31:0] da,db,dimm,dpc4,dbpc;
 	 input [4:0] drn;
 	 input [4:0] daluc;
 	 input dwreg,dm2reg,dwmem,djal,dj,dbeq,dbne;
 	 input clk,clrn;
 	 input [1:0] dadepen,dbdepen,dsdepen;
 	 
-	 output [31:0] ea,eb,eimm,epc4;
+	 output [31:0] ea,eb,eimm,epc4,bpc;
 	 output [4:0] ern;
 	 output [4:0] ealuc;
 	 output ewreg,em2reg,ewmem,ejal,ej,ebeq,ebne;
 	 output [1:0] eadepen,ebdepen,esdepen;
 	 
-	 reg [31:0] ea,eb,eimm,epc4;
+	 reg [31:0] ea,eb,eimm,epc4,bpc;
 	 reg [4:0] ern;
 	 reg [4:0] ealuc;
 	 reg [1:0] eadepen,ebdepen,esdepen;
@@ -62,6 +63,7 @@ module pipedereg(dwreg,dm2reg,dwmem,daluc,da,db,dimm,drn,
 					 ebeq<=0;
 					 ebne<=0;
 					 esdepen<=0;
+					 bpc<=0;
 			   end
 			else
 			    begin
@@ -81,6 +83,7 @@ module pipedereg(dwreg,dm2reg,dwmem,daluc,da,db,dimm,drn,
 					 ebeq<=dbeq;
 					 ebne<=dbne;
 					 esdepen<=dsdepen;
+					 bpc<=dbpc;
 				 end
 
 endmodule
