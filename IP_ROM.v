@@ -34,8 +34,8 @@ module IP_ROM(a,inst
 	 assign rom[6'h01]=32'h00201025;//sub r4,r1,r5
 	 assign rom[6'h02]=32'h041018E1;//and r6,r7,r1
 	 assign rom[6'h03]=32'h04202021;//or r8,r1,r1
-	 assign rom[6'h04]=32'h380041A8;//sw r8,r13,16
-	 assign rom[6'h05]=32'h34019DAA;//lw r10,r13,103
+	 assign rom[6'h04]=32'h380041A8;//store r8,16(r13)
+	 assign rom[6'h05]=32'h34019DAA;//load r10,103(r13)
 	 assign rom[6'h06]=32'h00102C6A;//add r11,r3,r10
 	 assign rom[6'h07]=32'h43FFE2F6;//bne r23,r22,-32
 	 //assign rom[6'h07]=32'h43FFE2D6;//bne r22,r22,-32
