@@ -4,9 +4,9 @@
 // Company: 
 // Engineer:
 //
-// Create Date:   16:03:22 05/19/2017
+// Create Date:   20:46:29 05/20/2017
 // Design Name:   pipeidcu
-// Module Name:   D:/PipeLineCPU/pipeidcu_tb.v
+// Module Name:   D:/repo/PipeLineCPU/pipeidcu_tb.v
 // Project Name:  pipeline
 // Target Device:  
 // Tool versions:  
@@ -37,6 +37,7 @@ module pipeidcu_tb;
 	reg mwreg;
 	reg ex_is_uncond;
 	reg ex_is_cond;
+	reg mem_is_cond;
 
 	// Outputs
 	wire wreg;
@@ -47,13 +48,14 @@ module pipeidcu_tb;
 	wire sext;
 	wire [1:0] pcsource;
 	wire jal;
-	wire load_depen;
+	wire we_pc_ir;
 	wire [1:0] a_depen;
 	wire [1:0] b_depen;
 	wire j;
 	wire beq;
 	wire bne;
 	wire [1:0] store_depen;
+	wire reset_ir;
 
 	// Instantiate the Unit Under Test (UUT)
 	pipeidcu uut (
@@ -70,7 +72,7 @@ module pipeidcu_tb;
 		.jal(jal), 
 		.em2reg(em2reg), 
 		.ern(ern), 
-		.load_depen(load_depen), 
+		.we_pc_ir(we_pc_ir), 
 		.rs(rs), 
 		.rt(rt), 
 		.mrn(mrn), 
@@ -83,7 +85,9 @@ module pipeidcu_tb;
 		.bne(bne), 
 		.ex_is_uncond(ex_is_uncond), 
 		.ex_is_cond(ex_is_cond), 
-		.store_depen(store_depen)
+		.mem_is_cond(mem_is_cond), 
+		.store_depen(store_depen), 
+		.reset_ir(reset_ir)
 	);
 
 	initial begin
@@ -100,9 +104,11 @@ module pipeidcu_tb;
 		mwreg = 0;
 		ex_is_uncond = 0;
 		ex_is_cond = 0;
+		mem_is_cond = 0;
 
 		// Wait 100 ns for global reset to finish
 		#100;
+      		#100;
 		//load
       /*rsrtequ = 0;
 		func = 6'b000010;
@@ -128,21 +134,8 @@ module pipeidcu_tb;
 		mwreg = 0;
 		ex_is_uncond = 0;
 		ex_is_cond = 0;
-		
-		#100;
-		//store √∞œ’—°‘ÒWBº∂
-		rsrtequ = 0;
-		func = 6'b000000;
-		op = 6'b001110;
-		em2reg = 0;
-		ern = 5'b00111;
-		rs = 5'b00010;
-		rt = 5'b00011;
-		mrn = 5'b00011;
-		ewreg = 1;
-		mwreg = 1;
-		ex_is_uncond = 0;
-		ex_is_cond = 0;
+		// Add stimulus here
+
 	end
       
 endmodule

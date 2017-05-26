@@ -46,6 +46,7 @@ module pipeidcu(rsrtequ,func,
 	 output [1:0] store_depen;
 	 output reset_ir; //清理IR,解决beq bne的问题
 	 
+	 wire load_depen;
 	 wire aluimm,shift;
 	 wire i_add,i_sub,i_mul,i_and,i_or,i_xor,i_sll,i_srl,i_sra,i_jr;            //对指令进行译码
 	 wire i_addi,i_muli,i_andi,i_ori,i_xori,i_lw,i_sw,i_beq,i_bne,i_lui,i_j,i_jal;
@@ -92,7 +93,7 @@ module pipeidcu(rsrtequ,func,
     ////////////////////////////////////////////控制信号的生成/////////////////////////////////////////////////////////
     assign wreg=(i_add|i_sub|i_mul|i_and|i_or|i_xor|i_sll|           //wreg为1时写寄存器堆中某一寄存器，否则不写
 	              i_srl|i_sra|i_addi|i_muli|i_andi|i_ori|i_xori|
-					  i_lw|i_lui|i_jal)&(~ex_is_uncond)&(~mem_is_cond);
+					  i_lw|i_lui|i_jal)&(~ex_is_uncond)&(~mem_is_cond)&(~load_depen);
 	 assign regrt=i_addi|i_muli|i_andi|i_ori|i_xori|i_lw|i_lui;    //regrt为1时目的寄存器是rt，否则为rd
 	 assign jal=i_jal;                                           //为1时执行jal指令，否则不是
 	 assign m2reg=i_lw;  //为1时将存储器数据写入寄存器，否则将ALU结果写入寄存器
@@ -105,7 +106,7 @@ module pipeidcu(rsrtequ,func,
 	 assign aluc[1]=i_and|i_andi|i_or|i_ori|i_xor|i_xori|i_beq|i_bne;//ALU的控制码
 	 assign aluc[0]=i_mul|i_muli|i_xor|i_xori|i_sll|i_srl|i_sra|i_beq|i_bne;//ALU的控制码
 
-	 assign wmem=i_sw&(~ex_is_uncond)&(~mem_is_cond);//为1时写存储器，否则不写
+	 assign wmem=i_sw&(~ex_is_uncond)&(~mem_is_cond)&(~load_depen);//为1时写存储器，否则不写
 	 assign pcsource[1]=i_jr|i_j|i_jal;//选择下一条指令的地址，00选PC+4,01选转移地址，10选寄存器内地址，11选跳转地址
 	 //assign pcsource[0]=i_beq&rsrtequ|i_bne&~rsrtequ|i_j|i_jal; //原来的初始代码有错误
 	 assign pcsource[0]=ex_is_cond|i_j|i_jal; 
@@ -119,7 +120,7 @@ module pipeidcu(rsrtequ,func,
 	 wire exe_a_depen,exe_b_depen;
 	 and(exe_a_depen,rs_equ,em2reg,rs_isreg);
 	 and(exe_b_depen,rt_equ,em2reg,rt_isreg);
-	 wire load_depen;
+
 	 or(load_depen,exe_a_depen,exe_b_depen);
 	 //load会关闭写使能信号,当前如果是条件跳转的话也会
 	 assign we_pc_ir = ~(load_depen|i_beq|i_bne);
